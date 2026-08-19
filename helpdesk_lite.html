@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HelpDesk Lite — V1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1F23; --paper:#F5F4EF; --surface:#FFFFFF; --line:#E4E1D8;
+    --muted:#767268; --accent:#2D5F5A; --accent-dark:#244B47;
+    --p-low:#767268; --p-med:#3A5A8C; --p-high:#B8792F; --p-urgent:#C1502E;
+    --s-new:#767268; --s-assigned:#3A5A8C; --s-progress:#8A6D1D; --s-resolved:#2D5F5A; --s-closed:#1B1F23;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .muted{color:var(--muted);}
+  .small{font-size:12px;}
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{background:var(--ink);color:var(--paper);padding:22px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .brand-mark{width:34px;height:34px;border-radius:8px;background:var(--accent);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;}
+  .brand-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;}
+  .sidebar .muted.small{color:#A8A498;}
+  .role-nav{display:flex;flex-direction:column;gap:4px;margin-bottom:30px;}
+  .role-btn{display:flex;align-items:center;gap:9px;background:transparent;border:none;color:#C9C6BC;
+    padding:9px 10px;border-radius:7px;font-size:13.5px;text-align:left;cursor:pointer;transition:background .15s ease;font-family:inherit;}
+  .role-btn:hover{background:#262B31;}
+  .role-active{background:var(--accent);color:var(--paper);}
+  .role-btn svg{flex-shrink:0;}
+  .lifecycle-legend{border-top:1px solid #2E333A;padding-top:16px;margin-top:auto;}
+  .legend-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#C9C6BC;padding:3px 0;}
+  .legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .sidebar-foot{display:flex;align-items:center;gap:6px;margin-top:16px;}
+
+  /* Main */
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;
+    border-bottom:1px solid var(--line);background:var(--surface);}
+  .who{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;}
+  .topbar-right{display:flex;align-items:center;gap:6px;}
+  .content{padding:28px 32px;}
+
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .section-head h2{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;margin:0;}
+
+  .grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:start;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;}
+  .card-title{font-weight:600;font-size:13.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+
+  .form-card{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+  .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500;}
+  .field-row{display:flex;gap:12px;}
+  .field-row .field{flex:1;}
+  input,textarea,select{font-family:'Inter',sans-serif;font-size:13.5px;padding:8px 10px;
+    border:1px solid var(--line);border-radius:6px;background:#FBFAF7;color:var(--ink);width:100%;}
+  input:focus,textarea:focus,select:focus{outline:2px solid #2D5F5A55;border-color:var(--accent);}
+  textarea{resize:vertical;font-family:inherit;}
+
+  .btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--paper);
+    border:none;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-ghost{background:transparent;border:1px solid var(--line);border-radius:6px;padding:7px 12px;
+    font-size:12.5px;cursor:pointer;font-family:inherit;}
+  .btn-ghost:hover{border-color:var(--accent);}
+
+  .ticket-list{display:flex;flex-direction:column;gap:8px;}
+  .ticket-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface);
+    border:1px solid var(--line);border-radius:9px;padding:12px 14px;cursor:pointer;transition:border-color .15s ease;}
+  .ticket-row:hover{border-color:var(--accent);}
+  .ticket-row-right{display:flex;align-items:center;gap:8px;}
+  .ticket-title{font-size:13.5px;font-weight:500;margin-top:2px;}
+
+  .pill{border:1px solid;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:600;white-space:nowrap;display:inline-block;}
+
+  .search-box{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:7px;
+    padding:7px 10px;background:#FBFAF7;margin-bottom:12px;}
+  .search-box input{border:none;background:transparent;flex:1;padding:0;}
+  .search-box input:focus{outline:none;}
+  .search-box svg{flex-shrink:0;color:var(--muted);}
+
+  .kb-list{display:flex;flex-direction:column;gap:12px;}
+  .kb-item{border-top:1px solid #EFEDE6;padding-top:10px;}
+  .kb-item:first-child{border-top:none;padding-top:0;}
+  .kb-title{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px;margin-bottom:3px;}
+
+  .filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .filter-bar .search-box{margin-bottom:0;flex:1;min-width:180px;}
+  .filter-bar select{min-width:120px;width:auto;}
+
+  .table{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .table-head,.table-row{display:grid;grid-template-columns:2.2fr 0.9fr 1fr 1fr 1fr;padding:12px 16px;align-items:center;gap:10px;}
+  .table-head{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--line);}
+  .table-row{border-bottom:1px solid #EFEDE6;cursor:pointer;font-size:13.5px;}
+  .table-row:last-child{border-bottom:none;}
+  .table-row:hover{background:#FBFAF7;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;}
+  .stat-num{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;margin-top:4px;}
+
+  .bar-row{display:grid;grid-template-columns:110px 1fr 24px;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-label{font-size:12.5px;}
+  .bar-track{background:#EFEDE6;border-radius:6px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;transition:width .4s ease;}
+
+  .flag-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #EFEDE6;font-size:13px;}
+  .flag-row:first-of-type{border-top:none;}
+
+  .empty{color:var(--muted);font-size:13px;padding:14px 0;}
+
+  .rail{display:flex;align-items:center;margin:16px 0 18px;}
+  .rail-node{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;}
+  .rail-dot{width:10px;height:10px;border-radius:50%;background:var(--line);border:2px solid var(--line);}
+  .rail-node.done .rail-dot{background:var(--accent);border-color:var(--accent);}
+  .rail-node.current .rail-dot{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px #2D5F5A22;}
+  .rail-label{font-size:10.5px;color:var(--muted);text-align:center;}
+  .rail-node.done .rail-label,.rail-node.current .rail-label{color:var(--ink);font-weight:600;}
+  .rail-line{flex:1;height:2px;background:var(--line);margin-bottom:16px;}
+  .rail-line.done{background:var(--accent);}
+
+  .drawer-overlay{position:fixed;inset:0;background:#1B1F2399;display:flex;justify-content:flex-end;z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;}
+  .drawer-overlay.open{opacity:1;pointer-events:auto;}
+  .drawer{width:440px;max-width:92vw;background:var(--paper);height:100%;overflow-y:auto;padding:26px;
+    transform:translateX(100%);transition:transform .25s ease;}
+  .drawer-overlay.open .drawer{transform:translateX(0);}
+  .drawer-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+  .drawer-head h3{font-family:'Space Grotesk',sans-serif;font-size:18px;margin:4px 0 0;}
+  .icon-btn{background:transparent;border:none;cursor:pointer;color:var(--muted);padding:2px;}
+  .icon-btn:hover{color:var(--ink);}
+  .drawer-tags{display:flex;align-items:center;gap:8px;margin:10px 0 4px;flex-wrap:wrap;}
+  .drawer-desc{font-size:13.5px;line-height:1.5;color:#3A3833;margin:8px 0 18px;}
+  .drawer-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;font-size:13px;}
+  .drawer-actions{display:flex;flex-direction:column;gap:14px;margin-bottom:20px;}
+  .action-group{display:flex;flex-direction:column;gap:8px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:5px 11px;
+    font-size:12px;cursor:pointer;font-family:inherit;}
+  .chip-active{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+  .drawer-section{margin-bottom:20px;}
+  .history-list{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px;}
+  .history-list li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#3A3833;}
+  .history-list li svg{flex-shrink:0;color:var(--accent);}
+  .comment{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:8px;}
+  .comment-input{display:flex;gap:8px;margin-top:10px;}
+  .comment-input input{flex:1;}
+
+  svg{display:block;}
+
+  @media (max-width: 860px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;gap:20px;}
+    .lifecycle-legend{display:none;}
+    .sidebar-foot{display:none;}
+    .content{padding:20px 16px;}
+    .grid-2{grid-template-columns:1fr;}
+    .stat-row{grid-template-columns:1fr;}
+    .table-head,.table-row{grid-template-columns:1.6fr 0.8fr 1fr;}
+    .table-head span:nth-child(4),.table-head span:nth-child(5),
+    .table-row span:nth-child(4),.table-row span:nth-child(5){display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">HD</div>
+      <div>
+        <div class="brand-name">HelpDesk Lite</div>
+        <div class="muted small">V1 · internal</div>
+      </div>
+    </div>
+
+    <nav class="role-nav" id="roleNav"></nav>
+
+    <div class="lifecycle-legend">
+      <div class="muted small" style="margin-bottom:8px;">Ticket lifecycle</div>
+      <div id="legendList"></div>
+    </div>
+
+    <div class="sidebar-foot muted small">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+      Role-based access · V1 scope
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="muted small">Signed in as</div>
+        <div class="who" id="whoLabel"></div>
+      </div>
+      <div class="topbar-right muted small">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span id="totalCount"></span>
+      </div>
+    </header>
+
+    <div class="content" id="content"></div>
+  </main>
+
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   Data model
+--------------------------------------------------------- */
+const STATUSES = ["New", "Assigned", "In Progress", "Resolved", "Closed"];
+const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
+const CATEGORIES = ["Access", "Hardware", "Software", "Network", "HR Systems", "Other"];
+const AGENTS = ["Dara Osei", "Malik Reyes", "Priya Nair"];
+const EMPLOYEE_NAME = "Sam Whitfield";
+
+const priorityColor = { Low:"#767268", Medium:"#3A5A8C", High:"#B8792F", Urgent:"#C1502E" };
+const statusColor = { New:"#767268", Assigned:"#3A5A8C", "In Progress":"#8A6D1D", Resolved:"#2D5F5A", Closed:"#1B1F23" };
+
+const KB_ARTICLES = [
+  { title:"Reset your VPN access", body:"Go to Settings > Security > VPN, click Revoke, then re-authenticate with SSO. Takes effect within 2 minutes." },
+  { title:"Request a new monitor or peripheral", body:"Hardware requests under $150 are auto-approved. Submit a ticket under category Hardware with your desk location." },
+  { title:"Shared drive permission errors", body:"Most 'Access Denied' errors clear after a re-login. If it persists after 10 minutes, submit a ticket under Access." },
+  { title:"Payroll system login loop", body:"Clear cookies for the HR portal domain specifically — a full browser reset is not required." },
+];
+
+let state = {
+  role: "Employee",
+  selectedId: null,
+  nextId: 107,
+  filters: { status:"All", priority:"All", category:"All", query:"" },
+  showForm: false,
+  kbQuery: "",
+  tickets: [
+    { id:"HD-101", title:"Cannot access shared finance drive", description:"Getting 'access denied' since this morning.", category:"Access", priority:"High", requester:"Sam Whitfield", createdAt:"2026-08-17 09:14", status:"In Progress", assignedTo:"Dara Osei", history:["Created","Assigned to Dara Osei","Moved to In Progress"], comments:["Checked AD group — re-syncing permissions."] },
+    { id:"HD-102", title:"Laptop won't dock", description:"External monitor not detected via dock.", category:"Hardware", priority:"Medium", requester:"Jules Ferrand", createdAt:"2026-08-17 10:02", status:"Assigned", assignedTo:"Malik Reyes", history:["Created","Assigned to Malik Reyes"], comments:[] },
+    { id:"HD-103", title:"VPN drops every 10 minutes", description:"Started after last update.", category:"Network", priority:"Urgent", requester:"Ada Chen", createdAt:"2026-08-18 08:41", status:"New", assignedTo:null, history:["Created"], comments:[] },
+    { id:"HD-104", title:"Payroll portal login loop", description:"Redirects back to login repeatedly.", category:"HR Systems", priority:"High", requester:"Tomi Bakare", createdAt:"2026-08-16 14:20", status:"Resolved", assignedTo:"Priya Nair", history:["Created","Assigned to Priya Nair","Moved to In Progress","Resolved"], comments:["Cleared HR-portal cookies, confirmed fixed."] },
+    { id:"HD-105", title:"Need Figma seat", description:"New design hire needs a license.", category:"Software", priority:"Low", requester:"Noor Idris", createdAt:"2026-08-15 11:00", status:"Closed", assignedTo:"Dara Osei", history:["Created","Assigned to Dara Osei","Resolved","Closed"], comments:[] },
+    { id:"HD-106", title:"Second monitor request", description:"Was told under $150 is auto-approved.", category:"Hardware", priority:"Low", requester:"Sam Whitfield", createdAt:"2026-08-18 13:10", status:"New", assignedTo:null, history:["Created"], comments:[] },
+  ]
+};
+
+/* ---------------------------------------------------------
+   Icons (tiny inline SVG helpers)
+--------------------------------------------------------- */
+function icon(path, size=16){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+const ICONS = {
+  user: icon('<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>'),
+  inbox: icon('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/>'),
+  grid: icon('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>'),
+  plus: icon('<path d="M5 12h14"/><path d="M12 5v14"/>', 15),
+  search: icon('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', 15),
+  book: icon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>', 13),
+  chevron: icon('<path d="m9 18 6-6-6-6"/>', 16),
+  x: icon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 18),
+  dot: icon('<circle cx="12" cy="12" r="4"/>', 12),
+  alert: icon('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>', 14),
+};
+
+/* ---------------------------------------------------------
+   Helpers
+--------------------------------------------------------- */
+function findTicket(id){ return state.tickets.find(t => t.id === id); }
+function pill(color, text){
+  return `<span class="pill" style="color:${color};border-color:${color}55;background:${color}14;">${text}</span>`;
+}
+function esc(str){
+  const d = document.createElement("div"); d.textContent = str ?? ""; return d.innerHTML;
+}
+
+/* ---------------------------------------------------------
+   Render: sidebar (static-ish parts rebuilt on role change)
+--------------------------------------------------------- */
+function renderSidebar(){
+  const roles = [
+    { key:"Employee", icon:ICONS.user, label:"Employee" },
+    { key:"Support", icon:ICONS.inbox, label:"Support Agent" },
+    { key:"Manager", icon:ICONS.grid, label:"Manager" },
+  ];
+  document.getElementById("roleNav").innerHTML = roles.map(r => `
+    <button class="role-btn ${state.role === r.key ? 'role-active' : ''}" data-role="${r.key}">
+      ${r.icon} ${r.label}
+    </button>
+  `).join("");
+  document.querySelectorAll(".role-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.role = btn.dataset.role;
+      state.showForm = false;
+      render();
+    });
+  });
+
+  document.getElementById("legendList").innerHTML = STATUSES.map(s => `
+    <div class="legend-row"><span class="legend-dot" style="background:${statusColor[s]}"></span>${s}</div>
+  `).join("");
+
+  document.getElementById("whoLabel").textContent =
+    state.role === "Employee" ? EMPLOYEE_NAME : state.role === "Manager" ? "Ops Manager" : "Support Agent";
+  document.getElementById("totalCount").textContent = `${state.tickets.length} total tickets`;
+}
+
+/* ---------------------------------------------------------
+   Render: Lifecycle rail
+--------------------------------------------------------- */
+function railHTML(status){
+  const idx = STATUSES.indexOf(status);
+  let out = '<div class="rail">';
+  STATUSES.forEach((s, i) => {
+    const cls = `${i <= idx ? "done" : ""} ${i === idx ? "current" : ""}`;
+    out += `<div class="rail-node ${cls}"><span class="rail-dot"></span><span class="rail-label">${s}</span></div>`;
+    if (i < STATUSES.length - 1) out += `<span class="rail-line ${i < idx ? "done" : ""}"></span>`;
+  });
+  out += '</div>';
+  return out;
+}
+
+/* ---------------------------------------------------------
+   Render: Employee view
+--------------------------------------------------------- */
+function renderEmployee(){
+  const mine = state.tickets.filter(t => t.requester === EMPLOYEE_NAME);
+  const kbResults = KB_ARTICLES.filter(a =>
+    (a.title + a.body).toLowerCase().includes(state.kbQuery.toLowerCase())
+  );
+
+  return `
+  <div class="grid-2">
+    <div>
+      <div class="section-head">
+        <h2>My requests</h2>
+        <button class="btn-primary" id="toggleForm">${ICONS.plus} New ticket</button>
+      </div>
+
+      ${state.showForm ? `
+      <div class="card form-card">
+        <label class="field"><span>Title</span>
+          <input id="f-title" placeholder="Short summary of the issue" />
+        </label>
+        <label class="field"><span>Description</span>
+          <textarea id="f-desc" rows="3" placeholder="What happened, what you expected, and when it started"></textarea>
+        </label>
+        <div class="field-row">
+          <label class="field"><span>Category</span>
+            <select id="f-category">${CATEGORIES.map(c => `<option>${c}</option>`).join("")}</select>
+          </label>
+          <label class="field"><span>Priority</span>
+            <select id="f-priority">${PRIORITIES.map(p => `<option ${p==="Medium"?"selected":""}>${p}</option>`).join("")}</select>
+          </label>
+        </div>
+        <button class="btn-primary" id="submitTicket" style="align-self:flex-start;">Submit request</button>
+      </div>` : ""}
+
+      <div class="ticket-list">
+        ${mine.length === 0 ? `<div class="empty">No requests yet — submit one above.</div>` : ""}
+        ${mine.map(t => `
+          <div class="ticket-row" data-open="${t.id}">
+            <div>
+              <div class="mono muted small">${t.id}</div>
+              <div class="ticket-title">${esc(t.title)}</div>
+            </div>
+            <div class="ticket-row-right">
+              ${pill(statusColor[t.status], t.status)}
+              ${ICONS.chevron}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-head"><h2>Self-service</h2></div>
+      <div class="card">
+        <div class="search-box">
+          ${ICONS.search}
+          <input id="kbSearch" placeholder="Search help articles…" value="${esc(state.kbQuery)}" />
+        </div>
+        <div class="kb-list">
+          ${kbResults.map(a => `
+            <div class="kb-item">
+              <div class="kb-title">${ICONS.book} ${esc(a.title)}</div>
+              <div class="muted small">${esc(a.body)}</div>
+            </div>
+          `).join("")}
+          ${kbResults.length === 0 ? `<div class="empty">No articles match — try submitting a ticket instead.</div>` : ""}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindEmployeeEvents(){
+  const toggle = document.getElementById("toggleForm");
+  if (toggle) toggle.addEventListener("click", () => { state.showForm = !state.showForm; render(); });
+
+  const submit = document.getElementById("submitTicket");
+  if (submit) submit.addEventListener("click", () => {
+    const title = document.getElementById("f-title").value.trim();
+    if (!title) return;
+    const ticket = {
+      id: `HD-${state.nextId}`,
+      title,
+      description: document.getElementById("f-desc").value.trim(),
+      category: document.getElementById("f-category").value,
+      priority: document.getElementById("f-priority").value,
+      requester: EMPLOYEE_NAME,
+      createdAt: new Date().toISOString().slice(0,16).replace("T"," "),
+      status: "New",
+      assignedTo: null,
+      history: ["Created"],
+      comments: [],
+    };
+    state.tickets.unshift(ticket);
+    state.nextId += 1;
+    state.showForm = false;
+    render();
+  });
+
+  const kbSearch = document.getElementById("kbSearch");
+  if (kbSearch) kbSearch.addEventListener("input", (e) => {
+    state.kbQuery = e.target.value;
+    render(true); // preserve focus
+    document.getElementById("kbSearch").focus();
+    document.getElementById("kbSearch").selectionStart = document.getElementById("kbSearch").selectionEnd = state.kbQuery.length;
+  });
+
+  document.querySelectorAll("[data-open]").forEach(el => {
+    el.addEventListener("click", () => openDrawer(el.dataset.open));
+  });
+}
+
+/* ---------------------------------------------------------
+   Render: Support view
+--------------------------------------------------------- */
+function renderSupport(){
+  const f = state.filters;
+  const filtered = state.tickets.filter(t =>
+    (f.status === "All" || t.status === f.status) &&
+    (f.priority === "All" || t.priority === f.priority) &&
+    (f.category === "All" || t.category === f.category) &&
+    (t.title.toLowerCase().includes(f.query.toLowerCase()) || t.id.toLowerCase().includes(f.query.toLowerCase()))
+  );
+  const unassignedCount = state.tickets.filter(t => !t.assignedTo).length;
+
+  return `
+    <div class="section-head">
+      <h2>Support queue</h2>
+      <span class="muted small">${unassignedCount} unassigned · ${filtered.length} shown</span>
+    </div>
+
+    <div class="filter-bar">
+      <div class="search-box">
+        ${ICONS.search}
+        <input id="supportSearch" placeholder="Search title or ID…" value="${esc(f.query)}" />
+      </div>
+      <select id="filterStatus">
+        <option ${f.status==="All"?"selected":""}>All</option>
+        ${STATUSES.map(s => `<option ${f.status===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+      <select id="filterPriority">
+        <option ${f.priority==="All"?"selected":""}>All</option>
+        ${PRIORITIES.map(p => `<option ${f.priority===p?"selected":""}>${p}</option>`).join("")}
+      </select>
+      <select id="filterCategory">
+        <option ${f.category==="All"?"selected":""}>All</option>
+        ${CATEGORIES.map(c => `<option ${f.category===c?"selected":""}>${c}</option>`).join("")}
+      </select>
+    </div>
+
+    <div class="table">
+      <div class="table-head"><span>Ticket</span><span>Priority</span><span>Status</span><span>Owner</span><span>Created</span></div>
+      ${filtered.map(t => `
+        <div class="table-row" data-open="${t.id}">
+          <span>
+            <div class="mono muted small">${t.id}</div>
+            <div class="ticket-title">${esc(t.title)}</div>
+          </span>
+          <span>${pill(priorityColor[t.priority], t.priority)}</span>
+          <span>${pill(statusColor[t.status], t.status)}</span>
+          <span>${t.assignedTo ? esc(t.assignedTo) : `<span class="muted">Unassigned</span>`}</span>
+          <span class="mono muted small">${t.createdAt}</span>
+        </div>
+      `).join("")}
+      ${filtered.length === 0 ? `<div class="empty" style="padding-left:16px;">No tickets match these filters.</div>` : ""}
+    </div>
+  `;
+}
+
+function bindSupportEvents(){
+  const search = document.getElementById("supportSearch");
+  if (search) search.addEventListener("input", (e) => {
+    state.filters.query = e.target.value;
+    render(true);
+    const el = document.getElementById("supportSearch");
+    el.focus(); el.selectionStart = el.selectionEnd = state.filters.query.length;
+  });
+  ["status","priority","category"].forEach(key => {
+    const el = document.getElementById(`filter${key.charAt(0).toUpperCase()+key.slice(1)}`);
+    if (el) el.addEventListener("change", (e) => { state.filters[key] = e.target.value; render(); });
+  });
+  document.querySelectorAll("[data-open]").forEach(el => {
+    el.addEventListener("click", () => openDrawer(el.dataset.open));
+  });
+}
+
+/* ---------------------------------------------------------
+   Render: Manager view
+--------------------------------------------------------- */
+function renderManager(){
+  const open = state.tickets.filter(t => t.status !== "Resolved" && t.status !== "Closed");
+  const unresolved = state.tickets.filter(t => t.status === "New" || t.status === "Assigned");
+  const byStatus = STATUSES.map(s => ({ status:s, count: state.tickets.filter(t => t.status === s).length }));
+  const workload = AGENTS.map(a => ({
+    agent:a,
+    count: state.tickets.filter(t => t.assignedTo === a && t.status !== "Resolved" && t.status !== "Closed").length,
+  }));
+  const maxByStatus = Math.max(...byStatus.map(b => b.count), 1);
+  const maxWorkload = Math.max(...workload.map(w => w.count), 1);
+  const delayed = state.tickets.filter(t => t.status === "New" && t.priority !== "Low");
+
+  return `
+    <div class="section-head"><h2>Manager visibility</h2></div>
+
+    <div class="stat-row">
+      <div class="stat-card"><span class="muted small">Open tickets</span><div class="stat-num">${open.length}</div></div>
+      <div class="stat-card"><span class="muted small">Unresolved (new/assigned)</span><div class="stat-num">${unresolved.length}</div></div>
+      <div class="stat-card"><span class="muted small">Needs attention</span><div class="stat-num" style="color:#C1502E;">${delayed.length}</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Tickets by status</div>
+        ${byStatus.map(b => `
+          <div class="bar-row">
+            <span class="bar-label">${b.status}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${(b.count/maxByStatus)*100}%;background:${statusColor[b.status]};"></div></div>
+            <span class="mono small">${b.count}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="card">
+        <div class="card-title">Workload by agent (open items)</div>
+        ${workload.map(w => `
+          <div class="bar-row">
+            <span class="bar-label">${w.agent}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${(w.count/maxWorkload)*100}%;background:#2D5F5A;"></div></div>
+            <span class="mono small">${w.count}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">${ICONS.alert} Flagged — unassigned &amp; not Low priority</div>
+      ${delayed.length === 0 ? `<div class="empty">Nothing flagged right now.</div>` : ""}
+      ${delayed.map(t => `
+        <div class="flag-row">
+          <span class="mono muted small">${t.id}</span>
+          <span class="ticket-title">${esc(t.title)}</span>
+          ${pill(priorityColor[t.priority], t.priority)}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+/* ---------------------------------------------------------
+   Drawer
+--------------------------------------------------------- */
+function openDrawer(id){
+  state.selectedId = id;
+  renderDrawer();
+  document.getElementById("drawerOverlay").classList.add("open");
+}
+function closeDrawer(){
+  document.getElementById("drawerOverlay").classList.remove("open");
+  state.selectedId = null;
+}
+function renderDrawer(){
+  const t = findTicket(state.selectedId);
+  const drawer = document.getElementById("drawer");
+  if (!t){ drawer.innerHTML = ""; return; }
+
+  drawer.innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <div class="mono muted small">${t.id}</div>
+        <h3>${esc(t.title)}</h3>
+      </div>
+      <button class="icon-btn" id="closeDrawerBtn">${ICONS.x}</button>
+    </div>
+
+    <div class="drawer-tags">
+      ${pill(priorityColor[t.priority], t.priority)}
+      ${pill(statusColor[t.status], t.status)}
+      <span class="muted small">${t.category}</span>
+    </div>
+
+    ${railHTML(t.status)}
+
+    <p class="drawer-desc">${esc(t.description) || "<span class='muted'>No description provided.</span>"}</p>
+
+    <div class="drawer-meta">
+      <div><span class="muted small">Requester</span><div>${esc(t.requester)}</div></div>
+      <div><span class="muted small">Created</span><div class="mono">${t.createdAt}</div></div>
+      <div><span class="muted small">Owner</span><div>${t.assignedTo ? esc(t.assignedTo) : "Unassigned"}</div></div>
+    </div>
+
+    ${state.role !== "Employee" ? `
+    <div class="drawer-actions">
+      <div class="action-group">
+        <span class="muted small">Assign to</span>
+        <div class="chip-row">
+          ${AGENTS.map(a => `<button class="chip ${t.assignedTo===a?"chip-active":""}" data-assign="${esc(a)}">${esc(a)}</button>`).join("")}
+        </div>
+      </div>
+      <div class="action-group">
+        <span class="muted small">Move status</span>
+        <div class="chip-row">
+          ${STATUSES.map(s => `<button class="chip ${t.status===s?"chip-active":""}" data-status="${s}">${s}</button>`).join("")}
+        </div>
+      </div>
+    </div>` : ""}
+
+    <div class="drawer-section">
+      <span class="muted small">History</span>
+      <ul class="history-list">
+        ${t.history.map(h => `<li>${ICONS.dot} ${esc(h)}</li>`).join("")}
+      </ul>
+    </div>
+
+    <div class="drawer-section">
+      <span class="muted small">Notes</span>
+      ${t.comments.map(c => `<div class="comment">${esc(c)}</div>`).join("")}
+      <div class="comment-input">
+        <input id="commentInput" placeholder="${state.role==='Employee' ? 'Add clarification…' : 'Add a resolution note…'}" />
+        <button class="btn-ghost" id="addCommentBtn">Add</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("closeDrawerBtn").addEventListener("click", closeDrawer);
+
+  document.querySelectorAll("[data-assign]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      t.assignedTo = btn.dataset.assign;
+      if (t.status === "New") t.status = "Assigned";
+      t.history.push(`Assigned to ${btn.dataset.assign}`);
+      renderDrawer();
+      renderContent();
+    });
+  });
+  document.querySelectorAll("[data-status]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      t.status = btn.dataset.status;
+      t.history.push(`Moved to ${btn.dataset.status}`);
+      renderDrawer();
+      renderContent();
+    });
+  });
+  const addBtn = document.getElementById("addCommentBtn");
+  const input = document.getElementById("commentInput");
+  const submitComment = () => {
+    const val = input.value.trim();
+    if (!val) return;
+    t.comments.push(val);
+    renderDrawer();
+  };
+  addBtn.addEventListener("click", submitComment);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitComment(); });
+}
+
+/* ---------------------------------------------------------
+   Root render
+--------------------------------------------------------- */
+function renderContent(){
+  const content = document.getElementById("content");
+  if (state.role === "Employee"){
+    content.innerHTML = renderEmployee();
+    bindEmployeeEvents();
+  } else if (state.role === "Support"){
+    content.innerHTML = renderSupport();
+    bindSupportEvents();
+  } else {
+    content.innerHTML = renderManager();
+  }
+  document.getElementById("totalCount").textContent = `${state.tickets.length} total tickets`;
+}
+
+function render(){
+  renderSidebar();
+  renderContent();
+}
+
+render();
+</script>
+</body>
+</html>
